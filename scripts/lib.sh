@@ -71,7 +71,7 @@ resolve_agent_target() {
       read_target_value "opencode"
       ;;
     gemini)
-      read_target_value "gemini_commands"
+      read_target_value "gemini"
       ;;
     canonical)
       read_target_value "canonical"

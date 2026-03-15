@@ -70,7 +70,7 @@ resolve_target_path() {
   if [[ -n ${TARGET_OVERRIDES[$key]:-} ]]; then
     configured="${TARGET_OVERRIDES[$key]}"
   else
-    if [[ $key == "opencode" && -n ${TARGET_OVERRIDES[canonical]:-} ]]; then
+    if [[ ($key == "opencode" || $key == "gemini") && -n ${TARGET_OVERRIDES[canonical]:-} ]]; then
       configured="${TARGET_OVERRIDES[canonical]}"
     else
       configured="$(resolve_agent_target "$key")"
@@ -114,23 +114,16 @@ remove_skill_target() {
   echo "skip (not installed): $dst"
 }
 
+declare -A processed_targets=()
+
 for agent in "${selected_agents[@]}"; do
-  if [[ $agent == "gemini" ]]; then
-    gemini_root="$(resolve_target_path gemini)"
-    commands_dir="$gemini_root/skills"
-    for skill in "${selected_skills[@]}"; do
-      cmd_file="$commands_dir/$skill.toml"
-      if [[ -f $cmd_file ]]; then
-        rm -f "$cmd_file"
-        echo "removed command: $cmd_file"
-      else
-        echo "skip (missing command): $cmd_file"
-      fi
-    done
+  target_root="$(resolve_target_path "$agent")"
+  if [[ -n ${processed_targets[$target_root]:-} ]]; then
+    echo "skip duplicate target for $agent: $target_root (already handled for ${processed_targets[$target_root]})"
     continue
   fi
+  processed_targets["$target_root"]="$agent"
 
-  target_root="$(resolve_target_path "$agent")"
   for skill in "${selected_skills[@]}"; do
     remove_skill_target "$skill" "$target_root"
   done

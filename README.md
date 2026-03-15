@@ -9,7 +9,6 @@ A multi-skill repository for agent environments.
 - `scripts/uninstall.sh` remove installed skills
 - `scripts/list-skills.sh` list available skills
 - `scripts/validate.sh` validate skill structure
-- `scripts/generate-gemini-commands.sh` bridge skills to Gemini CLI custom commands
 - `config/targets.toml` default install targets
 
 ## Quick Start
@@ -55,7 +54,7 @@ Override targets ad-hoc:
   --agents codex,gemini \
   --skills mise-workflow \
   --target codex=/tmp/codex-skills \
-  --target gemini=/tmp/gemini-commands
+  --target gemini=/tmp/gemini-skills
 ```
 
 ## Uninstall
@@ -72,27 +71,27 @@ Remove copied directories (requires `--force`):
 ./scripts/uninstall.sh --agents codex --skills mise-workflow --force
 ```
 
-## Gemini Bridge
+## Gemini Native Skills
 
-Gemini CLI does not consume `SKILL.md` natively. This repo bridges skills to Gemini custom commands.
+Gemini CLI consumes `SKILL.md` natively. This repo installs Gemini skills into `~/.agents/skills` by default.
 
-Generate commands directly:
+Install only for Gemini:
 
 ```bash
-./scripts/generate-gemini-commands.sh --skills all
+./scripts/install.sh --agents gemini --skills all
 ```
-
-This creates command files in `~/.gemini/commands/skills/*.toml` by default.
 
 ## Targets
 
 Defaults are in `config/targets.toml`:
 
 - canonical: `~/.agents/skills`
-- codex: `~/.codex/skills`
+- codex: `~/.agents/skills`
 - claude: `~/.claude/skills`
 - opencode: `~/.agents/skills`
-- gemini commands: `~/.gemini/commands`
+- gemini: `~/.agents/skills`
+
+If you use an older Codex setup pinned to `~/.codex/skills`, override it with `--target codex=~/.codex/skills`.
 
 ## Validation
 

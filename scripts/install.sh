@@ -23,7 +23,7 @@ Options:
   --skills <csv|all>            Skills to install (default: all)
   --target <agent=/path>        Override a target path (repeatable)
                                 Keys: codex,claude,opencode,gemini,canonical
-  --force                       Replace existing installed skill paths/commands
+  --force                       Replace existing installed skill paths
   -h, --help                    Show help
 USAGE
 }
@@ -84,7 +84,7 @@ resolve_target_path() {
   if [[ -n ${TARGET_OVERRIDES[$key]:-} ]]; then
     configured="${TARGET_OVERRIDES[$key]}"
   else
-    if [[ $key == "opencode" && -n ${TARGET_OVERRIDES[canonical]:-} ]]; then
+    if [[ ($key == "opencode" || $key == "gemini") && -n ${TARGET_OVERRIDES[canonical]:-} ]]; then
       configured="${TARGET_OVERRIDES[canonical]}"
     else
       configured="$(resolve_agent_target "$key")"
@@ -119,18 +119,16 @@ install_skill_to_target() {
   echo "installed: $dst"
 }
 
+declare -A processed_targets=()
+
 for agent in "${selected_agents[@]}"; do
-  if [[ $agent == "gemini" ]]; then
-    gemini_root="$(resolve_target_path gemini)"
-    args=("$SCRIPT_DIR/generate-gemini-commands.sh" "--skills" "$SKILLS_SELECTOR" "--dest" "$gemini_root")
-    if [[ $FORCE -eq 1 ]]; then
-      args+=("--force")
-    fi
-    "${args[@]}"
+  target_root="$(resolve_target_path "$agent")"
+  if [[ -n ${processed_targets[$target_root]:-} ]]; then
+    echo "skip duplicate target for $agent: $target_root (already handled for ${processed_targets[$target_root]})"
     continue
   fi
+  processed_targets["$target_root"]="$agent"
 
-  target_root="$(resolve_target_path "$agent")"
   for skill in "${selected_skills[@]}"; do
     install_skill_to_target "$skill" "$target_root"
   done

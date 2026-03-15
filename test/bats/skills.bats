@@ -12,13 +12,13 @@ teardown() {
 @test "validate succeeds" {
   run bash -c "cd '$REPO_ROOT' && ./scripts/validate.sh"
   [ "$status" -eq 0 ]
-  [[ "$output" == *"Validation passed"* ]]
+  [[ $output == *"Validation passed"* ]]
 }
 
 @test "list-skills includes mise-workflow" {
   run bash -c "cd '$REPO_ROOT' && ./scripts/list-skills.sh --names-only"
   [ "$status" -eq 0 ]
-  [[ "$output" == *"mise-workflow"* ]]
+  [[ $output == *"mise-workflow"* ]]
 }
 
 @test "install/uninstall symlink mode with all agents" {

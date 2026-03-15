@@ -8,18 +8,18 @@ TARGETS_TOML="$REPO_ROOT/config/targets.toml"
 
 trim() {
   local input="$1"
-  input="${input#${input%%[![:space:]]*}}"
-  input="${input%${input##*[![:space:]]}}"
+  input="${input#"${input%%[![:space:]]*}"}"
+  input="${input%"${input##*[![:space:]]}"}"
   printf '%s' "$input"
 }
 
 expand_tilde() {
   local input="$1"
-  if [[ "$input" == "~" ]]; then
+  if [[ $input == "~" ]]; then
     printf '%s' "$HOME"
     return
   fi
-  if [[ "$input" == ~/* ]]; then
+  if [[ $input == ~/* ]]; then
     printf '%s/%s' "$HOME" "${input#~/}"
     return
   fi
@@ -28,7 +28,7 @@ expand_tilde() {
 
 read_target_value() {
   local key="$1"
-  if [[ ! -f "$TARGETS_TOML" ]]; then
+  if [[ ! -f $TARGETS_TOML ]]; then
     echo "ERROR: missing targets config: $TARGETS_TOML" >&2
     exit 1
   fi
@@ -91,7 +91,7 @@ split_csv() {
   IFS=',' read -r -a items <<< "$raw"
   for item in "${items[@]}"; do
     item="$(trim "$item")"
-    if [[ -n "$item" ]]; then
+    if [[ -n $item ]]; then
       out_ref+=("$item")
     fi
   done
@@ -103,10 +103,11 @@ list_available_skills() {
 
 resolve_skills() {
   local selector="$1"
+  # shellcheck disable=SC2178
   local -n out_ref="$2"
   out_ref=()
 
-  if [[ "$selector" == "all" ]]; then
+  if [[ $selector == "all" ]]; then
     mapfile -t out_ref < <(list_available_skills)
   else
     local -a parsed_skills=()
@@ -114,7 +115,7 @@ resolve_skills() {
     out_ref=("${parsed_skills[@]}")
   fi
 
-  if [[ "${#out_ref[@]}" -eq 0 ]]; then
+  if [[ ${#out_ref[@]} -eq 0 ]]; then
     echo "ERROR: no skills selected" >&2
     exit 1
   fi
@@ -134,10 +135,11 @@ resolve_skills() {
 
 resolve_agents() {
   local selector="$1"
+  # shellcheck disable=SC2178
   local -n out_ref="$2"
   out_ref=()
 
-  if [[ "$selector" == "all" ]]; then
+  if [[ $selector == "all" ]]; then
     out_ref=(codex claude opencode gemini)
     return
   fi
@@ -145,7 +147,7 @@ resolve_agents() {
   local -a parsed_agents=()
   split_csv "$selector" parsed_agents
   out_ref=("${parsed_agents[@]}")
-  if [[ "${#out_ref[@]}" -eq 0 ]]; then
+  if [[ ${#out_ref[@]} -eq 0 ]]; then
     echo "ERROR: no agents selected" >&2
     exit 1
   fi
@@ -153,8 +155,7 @@ resolve_agents() {
   local agent
   for agent in "${out_ref[@]}"; do
     case "$agent" in
-      codex|claude|opencode|gemini)
-        ;;
+      codex | claude | opencode | gemini) ;;
       *)
         echo "ERROR: unsupported agent '$agent'" >&2
         exit 1
@@ -165,7 +166,7 @@ resolve_agents() {
 
 parse_target_override() {
   local input="$1"
-  if [[ "$input" != *=* ]]; then
+  if [[ $input != *=* ]]; then
     echo "ERROR: invalid --target '$input' (expected agent=/path)" >&2
     exit 1
   fi
@@ -176,15 +177,14 @@ parse_target_override() {
   value="$(trim "$value")"
 
   case "$key" in
-    codex|claude|opencode|gemini|canonical)
-      ;;
+    codex | claude | opencode | gemini | canonical) ;;
     *)
       echo "ERROR: --target key must be one of codex, claude, opencode, gemini, canonical" >&2
       exit 1
       ;;
   esac
 
-  if [[ -z "$value" ]]; then
+  if [[ -z $value ]]; then
     echo "ERROR: --target for '$key' has empty path" >&2
     exit 1
   fi

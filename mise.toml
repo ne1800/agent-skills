@@ -1,0 +1,13 @@
+[tools]
+### ─────────────────────────────────── core ────────────────────────────────────
+python = "3.12"
+uv = "latest"
+prek = "latest"
+bats = "1.13"
+
+[settings]
+python.uv_venv_auto = true
+experimental = true
+
+[hooks]
+enter = "mise run setup"

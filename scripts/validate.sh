@@ -3,13 +3,14 @@ set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 # shellcheck source=lib.sh
+# shellcheck disable=SC1091
 source "$SCRIPT_DIR/lib.sh"
 
 errors=0
 
 mapfile -t skills < <(list_available_skills)
 
-if [[ "${#skills[@]}" -eq 0 ]]; then
+if [[ ${#skills[@]} -eq 0 ]]; then
   echo "ERROR: no skills found under $SKILLS_ROOT" >&2
   exit 1
 fi
@@ -18,14 +19,14 @@ for skill in "${skills[@]}"; do
   skill_dir="$SKILLS_ROOT/$skill"
   skill_md="$skill_dir/SKILL.md"
 
-  if [[ ! -f "$skill_md" ]]; then
+  if [[ ! -f $skill_md ]]; then
     echo "ERROR: $skill is missing SKILL.md" >&2
     errors=1
     continue
   fi
 
   first_line="$(head -n 1 "$skill_md" || true)"
-  if [[ "$first_line" != "---" ]]; then
+  if [[ $first_line != "---" ]]; then
     echo "ERROR: $skill SKILL.md must start with YAML frontmatter (---)" >&2
     errors=1
   fi
@@ -54,12 +55,12 @@ for skill in "${skills[@]}"; do
 
   desc_value="$(skill_description_from_frontmatter "$skill_md")"
 
-  if [[ -z "$name_value" ]]; then
+  if [[ -z $name_value ]]; then
     echo "ERROR: $skill SKILL.md frontmatter is missing name" >&2
     errors=1
   fi
 
-  if [[ -z "$desc_value" ]]; then
+  if [[ -z $desc_value ]]; then
     echo "ERROR: $skill SKILL.md frontmatter is missing description" >&2
     errors=1
   fi
@@ -71,7 +72,7 @@ for skill in "${skills[@]}"; do
   fi
 done
 
-if [[ "$errors" -ne 0 ]]; then
+if [[ $errors -ne 0 ]]; then
   exit 1
 fi
 

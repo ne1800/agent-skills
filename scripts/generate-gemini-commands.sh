@@ -3,6 +3,7 @@ set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 # shellcheck source=lib.sh
+# shellcheck disable=SC1091
 source "$SCRIPT_DIR/lib.sh"
 
 SKILLS_SELECTOR="all"
@@ -10,7 +11,7 @@ DEST_OVERRIDE=""
 FORCE=0
 
 usage() {
-  cat <<USAGE
+  cat << USAGE
 Usage: scripts/generate-gemini-commands.sh [options]
 
 Options:
@@ -35,7 +36,7 @@ while [[ $# -gt 0 ]]; do
       FORCE=1
       shift
       ;;
-    -h|--help)
+    -h | --help)
       usage
       exit 0
       ;;
@@ -60,17 +61,17 @@ for skill in "${selected_skills[@]}"; do
   skill_md="$skill_dir/SKILL.md"
   out_file="$commands_dir/$skill.toml"
 
-  if [[ -e "$out_file" && "$FORCE" -ne 1 ]]; then
+  if [[ -e $out_file && $FORCE -ne 1 ]]; then
     echo "ERROR: command exists: $out_file (use --force to overwrite)" >&2
     exit 1
   fi
 
-  if [[ -e "$out_file" ]]; then
+  if [[ -e $out_file ]]; then
     rm -f "$out_file"
   fi
 
   description="$(skill_description_from_frontmatter "$skill_md")"
-  if [[ -z "$description" ]]; then
+  if [[ -z $description ]]; then
     description="Use the $skill skill"
   fi
 

@@ -3,6 +3,7 @@ set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 # shellcheck source=lib.sh
+# shellcheck disable=SC1091
 source "$SCRIPT_DIR/lib.sh"
 
 MODE="symlink"
@@ -13,7 +14,7 @@ FORCE=0
 declare -A TARGET_OVERRIDES
 
 usage() {
-  cat <<USAGE
+  cat << USAGE
 Usage: scripts/install.sh [options]
 
 Options:
@@ -50,7 +51,7 @@ while [[ $# -gt 0 ]]; do
       FORCE=1
       shift
       ;;
-    -h|--help)
+    -h | --help)
       usage
       exit 0
       ;;
@@ -63,8 +64,7 @@ while [[ $# -gt 0 ]]; do
 done
 
 case "$MODE" in
-  symlink|copy)
-    ;;
+  symlink | copy) ;;
   *)
     echo "ERROR: --mode must be symlink or copy" >&2
     exit 1
@@ -81,10 +81,10 @@ resolve_target_path() {
   local key="$1"
   local configured=""
 
-  if [[ -n "${TARGET_OVERRIDES[$key]:-}" ]]; then
+  if [[ -n ${TARGET_OVERRIDES[$key]:-} ]]; then
     configured="${TARGET_OVERRIDES[$key]}"
   else
-    if [[ "$key" == "opencode" && -n "${TARGET_OVERRIDES[canonical]:-}" ]]; then
+    if [[ $key == "opencode" && -n ${TARGET_OVERRIDES[canonical]:-} ]]; then
       configured="${TARGET_OVERRIDES[canonical]}"
     else
       configured="$(resolve_agent_target "$key")"
@@ -102,15 +102,15 @@ install_skill_to_target() {
 
   mkdir -p "$target_root"
 
-  if [[ -e "$dst" || -L "$dst" ]]; then
-    if [[ "$FORCE" -ne 1 ]]; then
+  if [[ -e $dst || -L $dst ]]; then
+    if [[ $FORCE -ne 1 ]]; then
       echo "ERROR: destination exists: $dst (use --force to replace)" >&2
       exit 1
     fi
     rm -rf "$dst"
   fi
 
-  if [[ "$MODE" == "symlink" ]]; then
+  if [[ $MODE == "symlink" ]]; then
     ln -s "$src" "$dst"
   else
     cp -R "$src" "$dst"
@@ -120,10 +120,10 @@ install_skill_to_target() {
 }
 
 for agent in "${selected_agents[@]}"; do
-  if [[ "$agent" == "gemini" ]]; then
+  if [[ $agent == "gemini" ]]; then
     gemini_root="$(resolve_target_path gemini)"
     args=("$SCRIPT_DIR/generate-gemini-commands.sh" "--skills" "$SKILLS_SELECTOR" "--dest" "$gemini_root")
-    if [[ "$FORCE" -eq 1 ]]; then
+    if [[ $FORCE -eq 1 ]]; then
       args+=("--force")
     fi
     "${args[@]}"

@@ -1,4 +1,4 @@
-# Migration Checklist: [tasks.*] -> .mise/tasks/*.sh
+# Migration Checklist: [tasks.*] -> .mise/tasks/\*.sh
 
 ## Discovery
 

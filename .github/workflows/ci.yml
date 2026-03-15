@@ -1,0 +1,32 @@
+name: CI
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  lint-and-test:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup mise
+        uses: jdx/mise-action@v3
+
+      - name: Trust repo config
+        run: mise trust -a
+
+      - name: Run lint
+        run: mise run lint
+
+      - name: Ensure lint made no additional changes
+        run: git diff --exit-code
+
+      - name: Run tests
+        run: mise run test

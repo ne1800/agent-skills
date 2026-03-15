@@ -3,12 +3,13 @@ set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 # shellcheck source=lib.sh
+# shellcheck disable=SC1091
 source "$SCRIPT_DIR/lib.sh"
 
 show_desc=1
 
 usage() {
-  cat <<USAGE
+  cat << USAGE
 Usage: scripts/list-skills.sh [options]
 
 Options:
@@ -23,7 +24,7 @@ while [[ $# -gt 0 ]]; do
       show_desc=0
       shift
       ;;
-    -h|--help)
+    -h | --help)
       usage
       exit 0
       ;;
@@ -37,19 +38,19 @@ done
 
 mapfile -t skills < <(list_available_skills)
 
-if [[ "${#skills[@]}" -eq 0 ]]; then
+if [[ ${#skills[@]} -eq 0 ]]; then
   echo "No skills found in $SKILLS_ROOT"
   exit 0
 fi
 
 for skill in "${skills[@]}"; do
-  if [[ "$show_desc" -eq 0 ]]; then
+  if [[ $show_desc -eq 0 ]]; then
     echo "$skill"
     continue
   fi
 
   desc="$(skill_description_from_frontmatter "$SKILLS_ROOT/$skill/SKILL.md")"
-  if [[ -z "$desc" ]]; then
+  if [[ -z $desc ]]; then
     desc="(no description)"
   fi
   echo "$skill - $desc"

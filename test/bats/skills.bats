@@ -22,21 +22,21 @@ teardown() {
 }
 
 @test "install/uninstall symlink mode with all agents" {
-  run bash -c "cd '$REPO_ROOT' && ./scripts/install.sh --mode symlink --agents codex,claude,opencode,gemini --skills mise-workflow --target codex='$TEST_ROOT/codex' --target claude='$TEST_ROOT/claude' --target opencode='$TEST_ROOT/opencode' --target gemini='$TEST_ROOT/gemini-commands'"
+  run bash -c "cd '$REPO_ROOT' && ./scripts/install.sh --mode symlink --agents codex,claude,opencode,gemini --skills mise-workflow --target codex='$TEST_ROOT/codex' --target claude='$TEST_ROOT/claude' --target opencode='$TEST_ROOT/opencode' --target gemini='$TEST_ROOT/gemini'"
   [ "$status" -eq 0 ]
 
   [ -L "$TEST_ROOT/codex/mise-workflow" ]
   [ -L "$TEST_ROOT/claude/mise-workflow" ]
   [ -L "$TEST_ROOT/opencode/mise-workflow" ]
-  [ -f "$TEST_ROOT/gemini-commands/skills/mise-workflow.toml" ]
+  [ -L "$TEST_ROOT/gemini/mise-workflow" ]
 
-  run bash -c "cd '$REPO_ROOT' && ./scripts/uninstall.sh --agents codex,claude,opencode,gemini --skills mise-workflow --target codex='$TEST_ROOT/codex' --target claude='$TEST_ROOT/claude' --target opencode='$TEST_ROOT/opencode' --target gemini='$TEST_ROOT/gemini-commands'"
+  run bash -c "cd '$REPO_ROOT' && ./scripts/uninstall.sh --agents codex,claude,opencode,gemini --skills mise-workflow --target codex='$TEST_ROOT/codex' --target claude='$TEST_ROOT/claude' --target opencode='$TEST_ROOT/opencode' --target gemini='$TEST_ROOT/gemini'"
   [ "$status" -eq 0 ]
 
   [ ! -e "$TEST_ROOT/codex/mise-workflow" ]
   [ ! -e "$TEST_ROOT/claude/mise-workflow" ]
   [ ! -e "$TEST_ROOT/opencode/mise-workflow" ]
-  [ ! -e "$TEST_ROOT/gemini-commands/skills/mise-workflow.toml" ]
+  [ ! -e "$TEST_ROOT/gemini/mise-workflow" ]
 }
 
 @test "install/uninstall copy mode for codex" {
@@ -51,12 +51,14 @@ teardown() {
   [ ! -e "$TEST_ROOT/codex/mise-workflow" ]
 }
 
-@test "generate gemini command from skill" {
-  run bash -c "cd '$REPO_ROOT' && ./scripts/generate-gemini-commands.sh --skills mise-workflow --dest '$TEST_ROOT/gemini'"
+@test "shared canonical target deduplicates opencode and gemini" {
+  run bash -c "cd '$REPO_ROOT' && ./scripts/install.sh --mode symlink --agents opencode,gemini --skills mise-workflow --target canonical='$TEST_ROOT/shared'"
   [ "$status" -eq 0 ]
+  [ -L "$TEST_ROOT/shared/mise-workflow" ]
+  [[ $output == *"skip duplicate target for"* ]]
 
-  COMMAND_FILE="$TEST_ROOT/gemini/skills/mise-workflow.toml"
-  [ -f "$COMMAND_FILE" ]
-  grep -q '^description = ' "$COMMAND_FILE"
-  grep -q '^prompt = ' "$COMMAND_FILE"
+  run bash -c "cd '$REPO_ROOT' && ./scripts/uninstall.sh --agents opencode,gemini --skills mise-workflow --target canonical='$TEST_ROOT/shared'"
+  [ "$status" -eq 0 ]
+  [ ! -e "$TEST_ROOT/shared/mise-workflow" ]
+  [[ $output == *"skip duplicate target for"* ]]
 }

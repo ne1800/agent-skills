@@ -3,10 +3,11 @@
 canonical = "~/.agents/skills"
 
 # Agent-specific defaults.
-codex = "~/.codex/skills"
+# Codex now documents ~/.agents/skills as the user skill location.
+codex = "~/.agents/skills"
 claude = "~/.claude/skills"
 # OpenCode can read ~/.agents/skills directly.
 opencode = "~/.agents/skills"
 
-# Gemini CLI custom commands path (skills are bridged to commands).
-gemini_commands = "~/.gemini/commands"
+# Gemini CLI native skills path.
+gemini = "~/.agents/skills"

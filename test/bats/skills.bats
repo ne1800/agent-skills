@@ -21,6 +21,28 @@ teardown() {
   [[ $output == *"mise-workflow"* ]]
 }
 
+@test "expand_tilde handles repo-style home-relative paths" {
+  run bash -c "source '$REPO_ROOT/scripts/lib.sh'; expand_tilde '~/.codex/skills'"
+  [ "$status" -eq 0 ]
+  [ "$output" = "$HOME/.codex/skills" ]
+}
+
+@test "skill descriptions support folded yaml blocks" {
+  skill_file="$TEST_ROOT/folded-skill.md"
+  cat > "$skill_file" << 'EOF'
+---
+name: sample-skill
+description: >-
+  First sentence.
+  Second sentence.
+---
+EOF
+
+  run bash -c "source '$REPO_ROOT/scripts/lib.sh'; skill_description_from_frontmatter '$skill_file'"
+  [ "$status" -eq 0 ]
+  [ "$output" = "First sentence. Second sentence." ]
+}
+
 @test "install/uninstall symlink mode with all agents" {
   run bash -c "cd '$REPO_ROOT' && ./scripts/install.sh --mode symlink --agents codex,claude,opencode,gemini --skills mise-workflow --target codex='$TEST_ROOT/codex' --target claude='$TEST_ROOT/claude' --target opencode='$TEST_ROOT/opencode' --target gemini='$TEST_ROOT/gemini'"
   [ "$status" -eq 0 ]

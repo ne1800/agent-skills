@@ -19,8 +19,8 @@ expand_tilde() {
     printf '%s' "$HOME"
     return
   fi
-  if [[ $input == ~/* ]]; then
-    printf '%s/%s' "$HOME" "${input#~/}"
+  if [[ ${input:0:1} == "~" && ${input:1:1} == "/" ]]; then
+    printf '%s/%s' "$HOME" "${input:2}"
     return
   fi
   printf '%s' "$input"
@@ -195,7 +195,7 @@ parse_target_override() {
 skill_description_from_frontmatter() {
   local skill_md="$1"
   awk '
-    BEGIN { in_frontmatter = 0; frontmatter_seen = 0 }
+    BEGIN { in_frontmatter = 0; frontmatter_seen = 0; capture = 0; desc = "" }
     /^---[[:space:]]*$/ {
       if (frontmatter_seen == 0) {
         in_frontmatter = 1
@@ -207,13 +207,39 @@ skill_description_from_frontmatter() {
         next
       }
     }
-    in_frontmatter == 1 && $0 ~ /^description:[[:space:]]*/ {
+    in_frontmatter != 1 {
+      next
+    }
+    capture == 1 {
+      if ($0 ~ /^[[:space:]][[:space:]]/) {
+        line = $0
+        sub(/^[[:space:]]+/, "", line)
+        if (desc != "") {
+          desc = desc " "
+        }
+        desc = desc line
+        next
+      }
+      print desc
+      exit
+    }
+    $0 ~ /^description:[[:space:]]*/ {
       line = $0
       sub(/^description:[[:space:]]*/, "", line)
+      if (line == ">-" || line == ">" || line == "|-" || line == "|" ||
+          line == ">+" || line == "|+") {
+        capture = 1
+        next
+      }
       gsub(/^"/, "", line)
       gsub(/"$/, "", line)
       print line
       exit
+    }
+    END {
+      if (capture == 1) {
+        print desc
+      }
     }
   ' "$skill_md"
 }

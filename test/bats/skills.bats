@@ -30,6 +30,8 @@ teardown() {
 @test "antigravity resolves to its global skill directory" {
   run bash -c "source '$REPO_ROOT/scripts/lib.sh'; resolve_agent_target antigravity"
   [ "$status" -eq 0 ]
+  # The target config intentionally keeps the tilde unexpanded.
+  # shellcheck disable=SC2088
   [ "$output" = "~/.gemini/config/skills" ]
 }
 

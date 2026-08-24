@@ -19,10 +19,10 @@ Usage: scripts/install.sh [options]
 
 Options:
   --mode <symlink|copy>         Install mode (default: symlink)
-  --agents <csv|all>            Targets: codex,claude,opencode,gemini (default: all)
+  --agents <csv|all>            Targets: codex,claude,opencode,antigravity (default: all)
   --skills <csv|all>            Skills to install (default: all)
   --target <agent=/path>        Override a target path (repeatable)
-                                Keys: codex,claude,opencode,gemini,canonical
+                                Keys: codex,claude,opencode,antigravity,canonical
   --force                       Replace existing installed skill paths
   -h, --help                    Show help
 USAGE
@@ -84,7 +84,7 @@ resolve_target_path() {
   if [[ -n ${TARGET_OVERRIDES[$key]:-} ]]; then
     configured="${TARGET_OVERRIDES[$key]}"
   else
-    if [[ ($key == "opencode" || $key == "gemini") && -n ${TARGET_OVERRIDES[canonical]:-} ]]; then
+    if [[ $key == "opencode" && -n ${TARGET_OVERRIDES[canonical]:-} ]]; then
       configured="${TARGET_OVERRIDES[canonical]}"
     else
       configured="$(resolve_agent_target "$key")"

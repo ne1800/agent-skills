@@ -9,5 +9,5 @@ claude = "~/.claude/skills"
 # OpenCode can read ~/.agents/skills directly.
 opencode = "~/.agents/skills"
 
-# Gemini CLI native skills path.
-gemini = "~/.agents/skills"
+# Antigravity CLI global skills path.
+antigravity = "~/.gemini/config/skills"

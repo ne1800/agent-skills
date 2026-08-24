@@ -27,6 +27,14 @@ teardown() {
   [ "$output" = "$HOME/.codex/skills" ]
 }
 
+@test "antigravity resolves to its global skill directory" {
+  run bash -c "source '$REPO_ROOT/scripts/lib.sh'; resolve_agent_target antigravity"
+  [ "$status" -eq 0 ]
+  # The target config intentionally keeps the tilde unexpanded.
+  # shellcheck disable=SC2088
+  [ "$output" = "~/.gemini/config/skills" ]
+}
+
 @test "skill descriptions support folded yaml blocks" {
   skill_file="$TEST_ROOT/folded-skill.md"
   cat > "$skill_file" << 'EOF'
@@ -44,21 +52,21 @@ EOF
 }
 
 @test "install/uninstall symlink mode with all agents" {
-  run bash -c "cd '$REPO_ROOT' && ./scripts/install.sh --mode symlink --agents codex,claude,opencode,gemini --skills mise-workflow --target codex='$TEST_ROOT/codex' --target claude='$TEST_ROOT/claude' --target opencode='$TEST_ROOT/opencode' --target gemini='$TEST_ROOT/gemini'"
+  run bash -c "cd '$REPO_ROOT' && ./scripts/install.sh --mode symlink --agents codex,claude,opencode,antigravity --skills mise-workflow --target codex='$TEST_ROOT/codex' --target claude='$TEST_ROOT/claude' --target opencode='$TEST_ROOT/opencode' --target antigravity='$TEST_ROOT/antigravity'"
   [ "$status" -eq 0 ]
 
   [ -L "$TEST_ROOT/codex/mise-workflow" ]
   [ -L "$TEST_ROOT/claude/mise-workflow" ]
   [ -L "$TEST_ROOT/opencode/mise-workflow" ]
-  [ -L "$TEST_ROOT/gemini/mise-workflow" ]
+  [ -L "$TEST_ROOT/antigravity/mise-workflow" ]
 
-  run bash -c "cd '$REPO_ROOT' && ./scripts/uninstall.sh --agents codex,claude,opencode,gemini --skills mise-workflow --target codex='$TEST_ROOT/codex' --target claude='$TEST_ROOT/claude' --target opencode='$TEST_ROOT/opencode' --target gemini='$TEST_ROOT/gemini'"
+  run bash -c "cd '$REPO_ROOT' && ./scripts/uninstall.sh --agents codex,claude,opencode,antigravity --skills mise-workflow --target codex='$TEST_ROOT/codex' --target claude='$TEST_ROOT/claude' --target opencode='$TEST_ROOT/opencode' --target antigravity='$TEST_ROOT/antigravity'"
   [ "$status" -eq 0 ]
 
   [ ! -e "$TEST_ROOT/codex/mise-workflow" ]
   [ ! -e "$TEST_ROOT/claude/mise-workflow" ]
   [ ! -e "$TEST_ROOT/opencode/mise-workflow" ]
-  [ ! -e "$TEST_ROOT/gemini/mise-workflow" ]
+  [ ! -e "$TEST_ROOT/antigravity/mise-workflow" ]
 }
 
 @test "install/uninstall copy mode for codex" {
@@ -73,13 +81,13 @@ EOF
   [ ! -e "$TEST_ROOT/codex/mise-workflow" ]
 }
 
-@test "shared canonical target deduplicates opencode and gemini" {
-  run bash -c "cd '$REPO_ROOT' && ./scripts/install.sh --mode symlink --agents opencode,gemini --skills mise-workflow --target canonical='$TEST_ROOT/shared'"
+@test "shared target deduplicates codex and opencode" {
+  run bash -c "cd '$REPO_ROOT' && ./scripts/install.sh --mode symlink --agents codex,opencode --skills mise-workflow --target codex='$TEST_ROOT/shared' --target opencode='$TEST_ROOT/shared'"
   [ "$status" -eq 0 ]
   [ -L "$TEST_ROOT/shared/mise-workflow" ]
   [[ $output == *"skip duplicate target for"* ]]
 
-  run bash -c "cd '$REPO_ROOT' && ./scripts/uninstall.sh --agents opencode,gemini --skills mise-workflow --target canonical='$TEST_ROOT/shared'"
+  run bash -c "cd '$REPO_ROOT' && ./scripts/uninstall.sh --agents codex,opencode --skills mise-workflow --target codex='$TEST_ROOT/shared' --target opencode='$TEST_ROOT/shared'"
   [ "$status" -eq 0 ]
   [ ! -e "$TEST_ROOT/shared/mise-workflow" ]
   [[ $output == *"skip duplicate target for"* ]]

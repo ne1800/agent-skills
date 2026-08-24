@@ -17,10 +17,10 @@ usage() {
 Usage: scripts/uninstall.sh [options]
 
 Options:
-  --agents <csv|all>            Targets: codex,claude,opencode,gemini (default: all)
+  --agents <csv|all>            Targets: codex,claude,opencode,antigravity (default: all)
   --skills <csv|all>            Skills to uninstall (default: all)
   --target <agent=/path>        Override a target path (repeatable)
-                                Keys: codex,claude,opencode,gemini,canonical
+                                Keys: codex,claude,opencode,antigravity,canonical
   --force                       Required to remove non-symlink directories
   -h, --help                    Show help
 USAGE
@@ -70,7 +70,7 @@ resolve_target_path() {
   if [[ -n ${TARGET_OVERRIDES[$key]:-} ]]; then
     configured="${TARGET_OVERRIDES[$key]}"
   else
-    if [[ ($key == "opencode" || $key == "gemini") && -n ${TARGET_OVERRIDES[canonical]:-} ]]; then
+    if [[ $key == "opencode" && -n ${TARGET_OVERRIDES[canonical]:-} ]]; then
       configured="${TARGET_OVERRIDES[canonical]}"
     else
       configured="$(resolve_agent_target "$key")"

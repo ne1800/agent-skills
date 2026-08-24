@@ -19,7 +19,7 @@ cd agent-skills
 ./scripts/install.sh
 ```
 
-Default install mode is `symlink` and default agents are `codex,claude,opencode,gemini`.
+Default install mode is `symlink` and default agents are `codex,claude,opencode,antigravity`.
 
 ## Install Options
 
@@ -51,10 +51,10 @@ Override targets ad-hoc:
 
 ```bash
 ./scripts/install.sh \
-  --agents codex,gemini \
+  --agents codex,antigravity \
   --skills mise-workflow \
   --target codex=/tmp/codex-skills \
-  --target gemini=/tmp/gemini-skills
+  --target antigravity=/tmp/antigravity-skills
 ```
 
 ## Uninstall
@@ -71,14 +71,14 @@ Remove copied directories (requires `--force`):
 ./scripts/uninstall.sh --agents codex --skills mise-workflow --force
 ```
 
-## Gemini Native Skills
+## Antigravity Native Skills
 
-Gemini CLI consumes `SKILL.md` natively. This repo installs Gemini skills into `~/.agents/skills` by default.
+Antigravity CLI consumes `SKILL.md` natively. This repo installs global Antigravity skills into `~/.gemini/config/skills` by default.
 
-Install only for Gemini:
+Install only for Antigravity:
 
 ```bash
-./scripts/install.sh --agents gemini --skills all
+./scripts/install.sh --agents antigravity --skills all
 ```
 
 ## Targets
@@ -89,7 +89,7 @@ Defaults are in `config/targets.toml`:
 - codex: `~/.agents/skills`
 - claude: `~/.claude/skills`
 - opencode: `~/.agents/skills`
-- gemini: `~/.agents/skills`
+- antigravity: `~/.gemini/config/skills`
 
 If you use an older Codex setup pinned to `~/.codex/skills`, override it with `--target codex=~/.codex/skills`.
 

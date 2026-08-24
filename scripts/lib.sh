@@ -70,8 +70,8 @@ resolve_agent_target() {
     opencode)
       read_target_value "opencode"
       ;;
-    gemini)
-      read_target_value "gemini"
+    antigravity)
+      read_target_value "antigravity"
       ;;
     canonical)
       read_target_value "canonical"
@@ -140,7 +140,7 @@ resolve_agents() {
   out_ref=()
 
   if [[ $selector == "all" ]]; then
-    out_ref=(codex claude opencode gemini)
+    out_ref=(codex claude opencode antigravity)
     return
   fi
 
@@ -155,7 +155,7 @@ resolve_agents() {
   local agent
   for agent in "${out_ref[@]}"; do
     case "$agent" in
-      codex | claude | opencode | gemini) ;;
+      codex | claude | opencode | antigravity) ;;
       *)
         echo "ERROR: unsupported agent '$agent'" >&2
         exit 1
@@ -177,9 +177,9 @@ parse_target_override() {
   value="$(trim "$value")"
 
   case "$key" in
-    codex | claude | opencode | gemini | canonical) ;;
+    codex | claude | opencode | antigravity | canonical) ;;
     *)
-      echo "ERROR: --target key must be one of codex, claude, opencode, gemini, canonical" >&2
+      echo "ERROR: --target key must be one of codex, claude, opencode, antigravity, canonical" >&2
       exit 1
       ;;
   esac

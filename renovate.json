@@ -1,0 +1,21 @@
+{
+  "$schema": "https://docs.renovatebot.com/renovate-schema.json",
+  "extends": ["config:recommended"],
+  "pre-commit": {
+    "enabled": true
+  },
+  "platformAutomerge": false,
+  "packageRules": [
+    {
+      "description": "Merge minor and patch updates once CI passes; major updates stay manual",
+      "matchUpdateTypes": ["minor", "patch"],
+      "automerge": true
+    },
+    {
+      "description": "Track Python as major.minor; mise follows patch releases on its own",
+      "matchManagers": ["mise"],
+      "matchDepNames": ["python"],
+      "extractVersion": "^v?(?<version>\\d+\\.\\d+)\\.\\d+$"
+    }
+  ]
+}

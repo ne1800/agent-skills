@@ -1,210 +1,128 @@
 ---
 name: mise-workflow
-description: Manage development workflows for repositories that use mise with executable file tasks. Use this skill when a repo contains mise.toml/.mise.toml/mise.local.toml/.tool-versions/.mise/tasks, or when asked to install/update tools, create or refactor tasks, run CI workflows, troubleshoot task resolution, or enforce pinning policy.
+description: Manages tools, versions and tasks in repositories that use mise, with every task as an executable file under .mise/tasks. Use when a repo contains mise.toml, .mise.toml, mise.local.toml, .tool-versions or .mise/tasks, or when asked to add or update tools, create, refactor or migrate tasks, set up CI with mise, or debug missing tools, untrusted configs or tasks that do not resolve.
 ---
 
 # Mise Workflow
 
-Specialized workflow for mise where task definitions live in executable files
-under `.mise/tasks`, not in `[tasks.*]` sections.
+Tools and settings live in `mise.toml`. Every task is an executable file under
+`.mise/tasks/`; `mise.toml` contains no `[tasks.*]` tables.
 
-## Operational Scope
+## Rules
 
-Use this skill for:
+- Run project workflows with `mise run <task>` and one-off commands with
+  `mise x -- <command>`. Do not rely on globally installed binaries.
+- Add tasks only as executable files under `.mise/tasks/`. Convert existing
+  `[tasks.*]` tables with `references/migration-checklist.md`.
+- Start every task with a shebang; it selects the interpreter. Use the matching
+  extension (`.sh`, `.py`) so editors, linters and hooks recognize the file.
+  Leave the extension off only on purpose.
+- Use Bash with `set -euo pipefail` for short command orchestration. Use Python
+  for parsing, data structures, API calls or logic that needs tests.
+- Keep one responsibility per task and describe it with `#MISE description`.
+- Shared configuration goes into `mise.toml`, machine-local overrides into
+  `mise.local.toml`, which stays out of Git.
+- Do not add `[hooks] enter` hooks that install or set up tools: mise installs
+  missing tools on demand when a task or `mise x` needs them.
 
-- Tool/runtime management with `mise`.
-- Task authoring and refactoring to file tasks.
-- Task naming and namespace conventions.
-- Project pinning policy and version updates.
-- CI commands that rely on `mise install` and `mise run`.
-- Troubleshooting missing tools, tasks, interpreters, or wrong task resolution.
+## Task Names
 
-## Mandatory Policy
+The path below `.mise/tasks/` is the task name. Directories become `:`
+namespaces, the extension is dropped and `_default` names the namespace itself:
 
-- Run commands through `mise`; do not assume global binaries.
-- Install tools with `mise install` before project workflows.
-- Do not define `[tasks.*]` in `mise.toml`.
-- Define tasks as executable files under `.mise/tasks/`.
-- Give every task a shebang; the shebang determines the interpreter.
-- Prefer an interpreter-appropriate extension so editors, linters, and hooks
-  recognize the file. `.sh`, `.py`, and extensionless task files are allowed.
-- When an extension is present, keep it consistent with the shebang.
-- Use Bash for simple CLI orchestration.
-- Prefer Python for complex logic, parsing, APIs, data structures, or extensive
-  tests. Other suitable interpreters remain allowed.
-- Execute workflows via `mise run <task>`.
-- Use `mise exec -- <command>` (or `mise x -- <command>`) for ad-hoc commands.
-- Keep shared settings in `mise.toml` and local overrides in `mise.local.toml`.
+| File                             | Task              |
+| -------------------------------- | ----------------- |
+| `.mise/tasks/lint.sh`            | `lint`            |
+| `.mise/tasks/release`            | `release`         |
+| `.mise/tasks/db/migrate.py`      | `db:migrate`      |
+| `.mise/tasks/test/_default.sh`   | `test`            |
+| `.mise/tasks/deploy/prod/api.sh` | `deploy:prod:api` |
 
-## Task Naming Contract
-
-Derive task names and `:` namespaces from the path. The file extension does not
-become part of the task name:
-
-- `.mise/tasks/setup.sh` -> `setup`
-- `.mise/tasks/reports/generate.py` -> `reports:generate`
-- `.mise/tasks/release` -> `release`
-- `.mise/tasks/pip/_default.py` -> `pip`
-- `.mise/tasks/<a>/<b>/<c>.<ext>` -> `<a>:<b>:<c>`
-
-When splitting one task into sub-tasks, use `:` namespaces and matching nested
-directories.
-
-## Taskfile Authoring Standard
-
-For each task file:
-
-1. Keep one responsibility per task.
-2. Choose the interpreter based on the task's complexity.
-3. Add a shebang for that interpreter.
-4. Prefer the matching file extension; use an extensionless name only
-   intentionally.
-5. Apply language-specific safety conventions. For Bash, start with
-   `set -euo pipefail`.
-6. Add optional metadata via `#MISE ...` comments.
-7. Mark the file executable.
-
-Simple Bash orchestration:
+## Task Template
 
 ```bash
 #!/usr/bin/env bash
-#MISE description="Install Python dependencies"
+#MISE description="Deploy one service"
+#MISE depends=["test"]
+#USAGE arg "<service>" help="Service to deploy"
+#USAGE flag "-n --dry-run" help="Print the plan only"
 set -euo pipefail
 
-uv pip install -r requirements.txt
+if [[ ${usage_dry_run:-false} == true ]]; then
+  echo "would deploy ${usage_service:?}"
+  exit 0
+fi
+./scripts/deploy.sh "${usage_service:?}"
 ```
 
-Structured Python logic:
+Make the file executable with `chmod +x`. `#USAGE` gives the task real
+arguments, `mise run <task> --help` and shell completion; values arrive as
+`usage_<name>` variables. Tasks without `#USAGE` receive extra arguments as
+`"$@"`. More metadata, a Python template and naming conventions:
+`references/taskfile-style.md`.
 
-```python
-#!/usr/bin/env python3
-#MISE description="Validate generated metadata"
+## Version Policy
 
-import json
-from pathlib import Path
+- Tools: `latest` (`mise use <tool>` writes it). Do not bump versions by hand.
+- Language runtimes (Python, Node, Go, Java, Ruby, Rust): a major or minor
+  line, such as `python = "3.15"` or `node = "24"`.
+- Exact versions only when the project needs them, for example for a known
+  incompatibility. Use `mise use --pin <tool>@<version>` and state the reason.
+- For reproducible installs, commit a `mise.lock` (`mise lock`) instead of
+  pinning in `mise.toml`.
+- `mise use --global` is for machine-wide defaults, never for project needs.
 
-payload = json.loads(Path("build/metadata.json").read_text())
-if "version" not in payload:
-    raise SystemExit("metadata is missing version")
+## Workflow
+
+1. Inspect the setup: `mise config ls` and `mise tasks ls`.
+2. If mise reports an untrusted config, read that file first, then run
+   `mise trust`.
+3. Run the requested task with `mise run <task>`; missing tools are installed
+   automatically. Use `mise install` only to prefetch, for example in CI.
+4. If a task is missing, add a file task instead of a TOML task.
+5. Check the result: the task appears in `mise tasks ls` and `mise run <task>`
+   succeeds.
+
+## CI
+
+On GitHub Actions, `jdx/mise-action` installs mise and the configured tools.
+Trust the repository config when it defines `[env]` or hooks, then call the
+project's tasks:
+
+```yaml
+- uses: jdx/mise-action@v5 # use the current major
+- run: mise trust --all
+- run: mise run lint
+- run: mise run test
 ```
 
-Example executable-bit update:
+Look up the real task names with `mise tasks ls`; do not assume `build`
+exists.
 
-```bash
-chmod +x \
-  .mise/tasks/pip/install.sh \
-  .mise/tasks/metadata/validate.py \
-  .mise/tasks/release
-```
+## Troubleshooting
 
-## Default Execution Workflow
+| Symptom                                             | Fix                                                   |
+| --------------------------------------------------- | ----------------------------------------------------- |
+| `Config files in ... are not trusted`               | Review the file, then `mise trust`.                   |
+| Tool missing or wrong version                       | `mise ls --current`, `mise install`, `mise doctor`.   |
+| `no task X found, but a non-executable file exists` | `chmod +x` the task file.                             |
+| Task missing from `mise tasks ls`                   | Check the location under `.mise/tasks/` and the name. |
+| Hook or linter skips a task                         | Add the extension that matches the shebang.           |
+| Virtualenv of a uv project is not active            | Set `python.uv_venv_auto` in `[settings]`, see below. |
 
-1. Detect mise usage (`mise.toml`, `.tool-versions`, `.mise/tasks`).
-2. Run `mise install`.
-3. Inspect task inventory with `mise tasks ls`.
-4. Run requested tasks via `mise run <task>`.
-5. If a task is missing, add or update an executable file under `.mise/tasks/`
-   instead of a TOML task.
-6. For one-off commands, use `mise exec -- <command>`.
+For uv projects, set `python.uv_venv_auto = "create|source"` (create the venv
+when missing) or `"source"` (activate only). It acts only next to a `uv.lock`;
+the old value `true` is deprecated.
 
-## Pinning Policy
+## Reporting
 
-Default strategy is fuzzy pinning.
-
-- Preferred: `python = "3.13"`.
-- Prefer `mise use <tool>@<major.minor>`.
-- Avoid `--pin` unless project policy requires exact versions.
-- Respect project override key: `MISE_PIN_STRATEGY=fuzzy|exact` (default
-  `fuzzy`).
-- Use `mise use --global` only for user-machine defaults, not project config.
-
-## Migration: TOML Tasks -> File Tasks
-
-When encountering `[tasks.*]` in `mise.toml`:
-
-1. Extract each task command and preserve its behavior.
-2. Assess its complexity and choose a suitable interpreter.
-3. Convert namespaced keys to nested directories under `.mise/tasks/`.
-4. Prefer a matching extension such as `.sh` or `.py`; extensionless files
-   remain valid when intentionally chosen.
-5. Add a shebang matching the interpreter and extension.
-6. Add `set -euo pipefail` when the task uses Bash.
-7. Mark the task executable.
-8. Remove the TOML task section.
-9. Validate task discovery and execution.
-
-Name conversion examples:
-
-- `[tasks.build]` -> `.mise/tasks/build.sh` for simple Bash orchestration.
-- `[tasks."metadata:validate"]` -> `.mise/tasks/metadata/validate.py` for
-  structured Python validation.
-- `[tasks."deploy:prod:api"]` -> `.mise/tasks/deploy/prod/api.sh` for a
-  namespaced Bash task.
-
-Do not rewrite existing project logic into another language merely to satisfy a
-filename convention.
-
-## CI Baseline Pattern
-
-Use this baseline sequence in CI jobs:
-
-```bash
-mise install
-mise run lint
-mise run test
-mise run build
-```
-
-If a repo has different task names, always discover them with `mise tasks ls`
-first.
-
-## Troubleshooting Quick Guide
-
-Tool or interpreter not found, or wrong version:
-
-```bash
-mise install
-mise ls
-mise doctor
-```
-
-Task not found:
-
-```bash
-mise tasks ls
-find .mise/tasks -type f
-```
-
-Wrong task selected:
-
-- Verify namespace path mapping in `.mise/tasks/**`.
-- Keep names explicit, for example `pip:install` instead of overloaded short
-  names.
-
-Task file ignored:
-
-- Ensure the file is executable.
-- Ensure the file is under `.mise/tasks/`.
-- Ensure the shebang names an available interpreter.
-- If an extension is present, ensure it agrees with the shebang.
-- If a linter or pre-commit-compatible hook skips an extensionless task, add
-  the interpreter-appropriate extension or configure that tool explicitly.
-
-The extension helps development tools classify the file; it does not override
-the shebang or select the runtime interpreter.
-
-## Output Standard
-
-When generating changes for a repo:
-
-- Show created or updated taskfile paths and their interpreters.
-- Show the expected `mise run <task>` command.
-- Keep `mise.toml` focused on tools, settings, and hooks rather than task
-  definitions.
-- Mention whether fuzzy or exact pinning was applied and why.
+After changing a repository, list the task files with their interpreters, the
+`mise run` commands to use, and each version choice (`latest`, runtime line or
+exact pin with its reason).
 
 ## References
 
-- Official docs list: `references/mise-official.md`
-- Taskfile style guide: `references/taskfile-style.md`
-- Migration checklist: `references/migration-checklist.md`
+- `references/taskfile-style.md`: metadata, arguments, Python template,
+  naming conventions
+- `references/migration-checklist.md`: converting `[tasks.*]` tables
+- `references/mise-official.md`: official documentation links

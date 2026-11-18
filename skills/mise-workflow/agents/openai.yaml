@@ -1,7 +1,8 @@
 ---
 interface:
   display_name: "Mise Workflow"
-  short_description: "Standardized workflow for repositories using mise"
+  short_description: "Tools, versions and file tasks with mise"
   default_prompt: >-
-    Use this skill when a repository uses mise.toml. Install tools with mise,
-    run tasks with mise run, and use mise exec for ad-hoc commands.
+    Use this skill when a repository uses mise. Keep tasks as executable files
+    under .mise/tasks, run them with mise run, use mise x for one-off commands,
+    and keep tools on latest with runtimes on a major or minor line.

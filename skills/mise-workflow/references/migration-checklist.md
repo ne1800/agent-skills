@@ -1,55 +1,41 @@
-# Migration Checklist: `[tasks.*]` -> `.mise/tasks/`
+# Migration Checklist: `[tasks.*]` to `.mise/tasks/`
 
-## Discovery
+Copy this checklist and tick it off per repository.
 
-- Search for TOML tasks:
-  - `rg '^\[tasks' mise.toml`
-- List existing file tasks:
-  - `find .mise/tasks -type f`
-- Inspect project conventions, available mise-managed runtimes, and hook/linter
-  file matching before choosing filenames.
+## 1. Inventory
 
-## Conversion
+- [ ] List TOML tasks: `rg -n '^\[tasks' mise.toml .mise.toml mise.local.toml`
+- [ ] List existing file tasks: `mise tasks ls --hidden`
+- [ ] Note the hooks and linters that match files by extension
+      (`.pre-commit-config.yaml`, CI, editor settings).
 
-- Create one executable file per task under `.mise/tasks/`.
-- Convert namespaced task keys into nested directories.
-- Preserve existing command behavior.
-- Choose the interpreter based on the task:
-  - Bash for simple CLI orchestration.
-  - Python for complex logic, parsing, APIs, data structures, or extensive
-    tests.
-  - Another suitable interpreter when appropriate.
-- Add a shebang for the chosen interpreter.
-- Prefer an interpreter-appropriate extension such as `.sh` or `.py`.
-- Use an extensionless filename only intentionally.
-- Ensure any extension agrees with the shebang.
-- Add `set -euo pipefail` to Bash tasks.
-- Add the executable bit.
-- Do not rewrite unrelated project logic merely to change languages.
+## 2. Convert each task
 
-## Cleanup
+- [ ] Map the key to a path: `[tasks."db:migrate"]` becomes
+      `.mise/tasks/db/migrate.sh`; a task that is also a namespace becomes
+      `<namespace>/_default.sh`.
+- [ ] Choose the interpreter: Bash for command orchestration, Python for
+      parsing or logic that needs tests. Do not rewrite working logic into
+      another language just to change the file type.
+- [ ] Add the shebang and the matching extension.
+- [ ] Carry over the metadata as `#MISE` lines: `description`, `depends`,
+      `alias`, `dir`, `sources`, `outputs`, `hide`.
+- [ ] Turn `run` arrays into sequential commands; keep `env` values as
+      exports in the script or in `[env]` when they are shared.
+- [ ] Replace argument handling with `#USAGE` when the task takes options.
+- [ ] Add `set -euo pipefail` to Bash tasks and `chmod +x` the file.
 
-- Remove converted `[tasks.*]` blocks from `mise.toml`.
-- Keep non-task configuration untouched (`[tools]`, `[settings]`, `[hooks]`,
-  and similar sections).
+## 3. Clean up
 
-## Validation
+- [ ] Remove the converted `[tasks.*]` tables.
+- [ ] Leave `[tools]`, `[settings]`, `[env]` and other sections untouched.
+- [ ] Update docs, CI and scripts that call the old task names, if any
+      changed.
 
-- `mise tasks ls` shows the expected path-derived task names and namespaces.
-- `mise run <task>` works for every migrated task.
-- Every task file is executable.
-- Every task has a usable shebang.
-- Every filename extension agrees with its shebang.
-- Extensionless tasks are intentional and covered by editor, linter, and hook
-  configuration where necessary.
-- No TOML task sections remain:
-  - `rg '^\[tasks' mise.toml`
+## 4. Validate
 
-## Policy Validation
-
-- All task files live under `.mise/tasks/`.
-- `.sh`, `.py`, other suitable extensions, and extensionless task files are
-  allowed.
-- Namespace directories match the intended `:` task names.
-- Pinning policy remains the project default
-  (`MISE_PIN_STRATEGY=fuzzy` unless overridden).
+- [ ] `mise tasks ls` shows every expected name.
+- [ ] `mise run <task>` succeeds for each migrated task, including
+      `--help` for tasks with `#USAGE`.
+- [ ] `rg -n '^\[tasks' mise.toml` finds nothing.
+- [ ] The repository's lint and test tasks pass.
